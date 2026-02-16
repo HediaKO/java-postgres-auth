@@ -1,21 +1,22 @@
-# Use OpenJDK 17 base image
-FROM eclipse-temurin:17-jdk-alpine
+# Use OpenJDK 17
+FROM openjdk:17-jdk-slim
 
+# Set working directory
 WORKDIR /app
 
-# Copy Maven config first
-COPY pom.xml ./
+# Copy pom.xml and install dependencies
+COPY pom.xml .
+RUN apt-get update && apt-get install -y maven
+RUN mvn dependency:resolve
 
 # Copy source code
 COPY src ./src
 
-# Install Maven wrapper
-RUN wget https://repo.maven.apache.org/maven-wrapper/maven-wrapper-3.8.8.zip \
-    && unzip maven-wrapper-3.8.8.zip -d ./ \
-    && rm maven-wrapper-3.8.8.zip
-
 # Build the project
-RUN ./mvnw clean package -DskipTests
+RUN mvn package -DskipTests
 
-# Run the Spring Boot app
-CMD ["java","-jar","target/java-postgres-auth-0.0.1-SNAPSHOT.jar"]
+# Expose port
+EXPOSE 8080
+
+# Run the JAR
+CMD ["java", "-jar", "target/java-postgres-auth-0.0.1-SNAPSHOT.jar"]
